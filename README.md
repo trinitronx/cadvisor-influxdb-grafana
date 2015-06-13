@@ -13,7 +13,23 @@ Requirements:
 
 ## Running:
 
-Simply run:
+First, set up your passwords & secrets in the `env.sh` file:
+
+
+    export CERT_NAME=*.boot2docker.local
+    export HOSTNAME=boot2docker.local
+    export INFLUXDB_PASS=123abcU&MeEzasInfluxDB
+    export GRAFANA_PASS=TarPitaSaurus
+    export GRAFANA_SECRET_KEY=BodP3JV4TbbggerfJo16kQ
+    
+    ## These do not work yet because `grafana.ini` section name is `[auth.google]`
+    ## ENV vars cannot have periods in them, and [Grafana's ENV var config syntax][3] wants `GF_<SECTION_NAME>_<KEYNAME>`
+    #    export AUTH_GOOGLE_CLIENT_ID=1234567890abcdefghijlkmnopqrstuvwxyz.apps.googleusercontent.com
+    #    export AUTH_GOOGLE_CLIENT_SECRET=<YOUR GOOGLE OAUTH CLIENT SECRET>
+    
+To generate a `GRAFANA_SECRET_KEY` easily, run: `ruby -r securerandom -e 'puts SecureRandom.urlsafe_base64'`
+
+Next, simply run:
 
 `./docker-run.sh`
 
@@ -25,3 +41,4 @@ To completely stop, and remove all containers, volumes, and data (including Infl
 
 [1]: https://docs.docker.com/compose/
 [2]: http://boot2docker.io
+[3]: https://github.com/grafana/grafana/blob/master/docs/sources/installation/configuration.md#using-environment-variables
