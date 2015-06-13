@@ -33,8 +33,9 @@ BOOT2DOCKER_HOSTNAME=${HOSTNAME}
 
   # ^(.*) registry\.$( echo "$BOOT2DOCKER_HOSTNAME" | sed 's/[^[:alnum:]_-]/\\&/g' )$'
   ansible localhost -i ${SCRIPTPATH}/hosts  -m lineinfile -a "dest=/etc/hosts insertafter='EOF' line='$(boot2docker ip) ${BOOT2DOCKER_HOSTNAME}'"   -vvvv  --sudo --ask-sudo-pass
-  ansible localhost -i ${SCRIPTPATH}/hosts  -m lineinfile -a "dest=/etc/hosts insertafter='EOF' line='$(boot2docker ip) registry.${BOOT2DOCKER_HOSTNAME}'"   -vvvv  --sudo --ask-sudo-pass
-  ansible localhost -i ${SCRIPTPATH}/hosts  -m lineinfile -a "dest=/etc/hosts insertafter='EOF' line='$(boot2docker ip) registry-ui.${BOOT2DOCKER_HOSTNAME}'"   -vvvv  --sudo --ask-sudo-pass
+  ansible localhost -i ${SCRIPTPATH}/hosts  -m lineinfile -a "dest=/etc/hosts insertafter='EOF' line='$(boot2docker ip) cadvisor.${BOOT2DOCKER_HOSTNAME}'"   -vvvv  --sudo --ask-sudo-pass
+  ansible localhost -i ${SCRIPTPATH}/hosts  -m lineinfile -a "dest=/etc/hosts insertafter='EOF' line='$(boot2docker ip) grafana.${BOOT2DOCKER_HOSTNAME}'"   -vvvv  --sudo --ask-sudo-pass
+  ansible localhost -i ${SCRIPTPATH}/hosts  -m lineinfile -a "dest=/etc/hosts insertafter='EOF' line='$(boot2docker ip) influxdb.${BOOT2DOCKER_HOSTNAME}'"   -vvvv  --sudo --ask-sudo-pass
 fi
 
 [ -e "$CERTS_PATH" ] || mkdir -p $CERTS_PATH
