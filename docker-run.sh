@@ -3,10 +3,23 @@ pushd `dirname $0` > /dev/null
 SCRIPTPATH=`pwd`
 popd > /dev/null
 
-HOSTNAME='docker00.example.com'
+[ -e $SCRIPTPATH/env.sh ] && source $SCRIPTPATH/env.sh
+
+HOSTNAME=${HOSTNAME:-docker00.example.com}
 CERTS_PATH=${SCRIPTPATH}/etc/docker/certs.d/
 
 BOOT2DOCKER=$(which boot2docker)
+ENVSUBST=$(which envsubst)
+if [ ! -x "$ENVSUBST" ]; then
+  echo -e "ERROR: envsubst not found.  Cannot replace variables in docker-compose.yml.tmpl!"
+  echo -e "ERROR: Please install the gettext package."
+  echo -e "INFO:  On OS X, you can use:"
+  echo -e "       brew install gettext"
+  echo -e "       ln -s $(brew --cellar gettext)/$(ls -1t $(brew --cellar gettext)/ | head -n1 )/bin/envsubst /usr/local/bin/envsubst"
+  echo -e "Exiting..."
+  exit 1
+fi
+
 ANSIBLE=$( which ansible )
 if [ -x "$BOOT2DOCKER" ]; then
 BOOT2DOCKER_HOSTNAME=${HOSTNAME}
@@ -27,20 +40,23 @@ fi
 [ -e "$CERTS_PATH" ] || mkdir -p $CERTS_PATH
 pushd $CERTS_PATH
 
-${SCRIPTPATH}/gen-cert.sh "${HOSTNAME}"
-eval $(grep '^password=' ${SCRIPTPATH}/gen-cert.sh)
-
 # Avoid problematic filenames for certs & keys
 # replace '*.' with 'star_'
 # replace '.' with '_'
 # For example: A wildcard cert should end up being named: star_example_com.crt
-CERT_NAME="${HOSTNAME}"
-wildcard_cert=$(echo "$domain" | grep -c '\*')
+CERT_NAME="${CERT_NAME:-$HOSTNAME}"
+export CERT_NAME
+
+wildcard_cert=$(echo "$CERT_NAME" | grep -c '\*')
 
 if [ $wildcard_cert -gt 0 ]; then
   CERT_NAME="${CERT_NAME/\*\./star_}"
   CERT_NAME="${CERT_NAME/\./_}"
 fi
+
+${SCRIPTPATH}/gen-cert.sh "${CERT_NAME}"
+eval $(grep '^password=' ${SCRIPTPATH}/gen-cert.sh)
+
 
 cp $CERT_NAME.key $CERT_NAME.key.enc
 openssl rsa -in $CERT_NAME.key.enc -out $CERT_NAME.key -passin pass:$password
