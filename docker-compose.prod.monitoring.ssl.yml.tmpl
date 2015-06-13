@@ -1,0 +1,78 @@
+influxsrv:
+  image: tutum/influxdb
+  name: influxsrv
+  volumes:
+    - ./data:/data:rw
+    - ./etc/docker/certs.d/:/etc/influxdb-certs:ro
+  ports:
+    - "8084:8084"
+    - "8083:8083"
+    - "8086:8086"
+  expose:
+    - "8090"
+    - "8099"
+  environment:
+    - PRE_CREATE_DB=cadvisor
+    - INFLUXDB_INIT_PWD=${INFLUXDB_PASS}
+    - SSL_SUPPORT=true
+    - SSL_CERT=$SSL_CERT
+cadvisor:
+  image: google/cadvisor
+  name: cadvisor
+#  command: -storage_driver=influxdb -storage_driver_db=cadvisor -storage_driver_host=influxsrv:8084 -storage_driver_secure=True -storage_driver_password=${INFLUXDB_PASS}
+  entrypoint: "/bin/sh"
+  command: "-c 'sed -i -e s%x86_64/generic%x86/64% /etc/opkg.conf && sleep 1 && sync && opkg-cl -f /etc/opkg.conf update &&
+    opkg-cl -f /etc/opkg.conf install ca-certificates openssl-util curl &&
+    ln -s /etc/influxdb-certs/${CERT_NAME}.crt /etc/ssl/certs/${CERT_NAME}.crt &&
+    ln -sf /etc/ssl/certs/${CERT_NAME}.crt /etc/ssl/certs/$(openssl x509 -hash -noout -in /etc/influxdb-certs/${CERT_NAME}.crt).0 &&
+    find /etc/ssl/certs/ -name 'ca-certificates.crt' -prune -o -name '*.crt' -exec cat '{}' \\; >> /etc/ssl/certs/ca-certificates.crt &&
+    cadvisor -storage_driver=influxdb
+    -storage_driver_db=cadvisor -storage_driver_host=${HOSTNAME}:8084 -storage_driver_secure=True
+    -storage_driver_password=${INFLUXDB_PASS}'"
+  ports:
+    - "8080:8080"
+  volumes:
+    - /:/rootfs:ro
+    - /var/run:/var/run:rw
+    - /sys:/sys:ro
+    - /var/lib/docker/:/var/lib/docker:ro
+    - /var/log/:/var/log/:ro
+    - ./etc/docker/certs.d/:/etc/influxdb-certs:ro
+  links:
+    - influxsrv:influxsrv
+## NOTE:
+## Turning SSL on breaks AJAX requests unless BOTH InfluxDB and Grafana are running SSL
+## Either everything has to be SSL or nothing can be... but cadvisor needs to be able to validate certs,
+## and it's running OS version: Buildroot 2014.02
+## ca-certificates package is not installed by default, and creating certs bundle file manually didn't work.
+## GoLang only supports static root cert bundles:
+##   http://golang.org/src/crypto/x509/root_unix.go
+## js console errors:
+##   Blocked loading mixed active content "http://docker00.example.com:8086/db/cadvisor/series?p=<INFLUXDB_PASS>&q=select+container_name,+mean(memory_usage)+from+%22stats%22+where+time+%3E+now()-6h+group+by+time(10s),+container_name+order+asc&u=<INFLUXDB_USER>"
+grafana:
+  image: grafana/grafana
+  name: grafana
+  ports:
+    - "3000:3000"
+  links:
+    - influxsrv:influxsrv
+  volumes:
+    - ./etc/docker/certs.d/:/etc/grafana/certs:ro
+  environment:
+    - INFLUXDB_HOST=${HOSTNAME}
+    - INFLUXDB_PORT=8084
+    - INFLUXDB_NAME=cadvisor
+    - INFLUXDB_USER=root
+    - INFLUXDB_PASS=${INFLUXDB_PASS}
+    - GF_SECURITY_ADMIN_USER=admin
+    - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASS}
+    - GF_SECURITY_SECRET_KEY=${GRAFANA_SECRET_KEY}
+    - GF_SERVER_PROTOCOL=https
+    - GF_SERVER_DOMAIN=${HOSTNAME}
+    - GF_SERVER_ENFORCE_DOMAIN=true
+    - GF_SERVER_CERT_FILE=/etc/grafana/certs/${CERT_NAME}.crt
+    - GF_SERVER_CERT_KEY=/etc/grafana/certs/${CERT_NAME}.key
+    - GF_USERS_ALLOW_SIGN_UP=false
+    - GF_USERS_ALLOW_ORG_CREATE=false
+    - GF_AUTHGOOGLE_CLIENT_ID=${AUTH_GOOGLE_CLIENT_ID}
+    - GF_AUTHGOOGLE_CLIENT_SECRET=${AUTH_GOOGLE_CLIENT_SECRET}
