@@ -1,0 +1,51 @@
+influxsrv:
+  image: tutum/influxdb
+  name: influxsrv
+  volumes:
+    - ./data:/data:rw
+  ports:
+    - "8083:8083"
+    - "8086:8086"
+  expose:
+    - "8090"
+    - "8099"
+  environment:
+    - PRE_CREATE_DB=cadvisor
+    - INFLUXDB_INIT_PWD=${INFLUXDB_PASS}
+cadvisor:
+  image: google/cadvisor
+  name: cadvisor
+  command: -storage_driver=influxdb -storage_driver_db=cadvisor -storage_driver_host=${HOSTNAME}:8086 -storage_driver_password=${INFLUXDB_PASS}
+  ports:
+    - "8080:8080"
+  volumes:
+    - /:/rootfs:ro
+    - /var/run:/var/run:rw
+    - /sys:/sys:ro
+    - /var/lib/docker/:/var/lib/docker:ro
+    - /var/log/:/var/log/:ro
+  links:
+    - influxsrv:influxsrv
+grafana:
+  image: grafana/grafana
+  name: grafana
+  ports:
+    - "3000:3000"
+  links:
+    - influxsrv:influxsrv
+  environment:
+    - INFLUXDB_HOST=influxsrv
+    - INFLUXDB_PORT=8086
+    - INFLUXDB_NAME=cadvisor
+    - INFLUXDB_USER=root
+    - INFLUXDB_PASS=${INFLUXDB_PASS}
+    - GF_SECURITY_ADMIN_USER=admin
+    - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASS}
+    - GF_SECURITY_SECRET_KEY=${GRAFANA_SECRET_KEY}
+    - GF_SERVER_PROTOCOL=http
+    - GF_SERVER_DOMAIN=${HOSTNAME}
+    - GF_SERVER_ENFORCE_DOMAIN=true
+    - GF_USERS_ALLOW_SIGN_UP=false
+    - GF_USERS_ALLOW_ORG_CREATE=false
+    - GF_AUTHGOOGLE_CLIENT_ID=${AUTH_GOOGLE_CLIENT_ID}
+    - GF_AUTHGOOGLE_CLIENT_SECRET=${AUTH_GOOGLE_CLIENT_SECRET}
