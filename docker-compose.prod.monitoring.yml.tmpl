@@ -15,7 +15,7 @@ influxsrv:
 cadvisor:
   image: google/cadvisor
   name: cadvisor
-  command: -storage_driver=influxdb -storage_driver_db=cadvisor -storage_driver_host=${HOSTNAME}:8086 -storage_driver_password=${INFLUXDB_PASS}
+  command: -storage_driver=influxdb -storage_driver_db=cadvisor -storage_driver_host=influxsrv:8086 -storage_driver_password=${INFLUXDB_PASS}
   ports:
     - "8080:8080"
   volumes:
