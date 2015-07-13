@@ -29,6 +29,8 @@ First, set up your passwords & secrets in the `env.sh` file:
     
 To generate a `GRAFANA_SECRET_KEY` easily, run: `ruby -r securerandom -e 'puts SecureRandom.urlsafe_base64'`
 
+**Note:** An example `env.sh` is provided with this repo: `env.sh.example`
+
 Next, simply run:
 
 `./docker-run.sh`
