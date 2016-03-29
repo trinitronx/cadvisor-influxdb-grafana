@@ -8,7 +8,7 @@ Requirements:
 1. `docker` command line client is installed
 2. `docker-compose` is installed
 3. `envsubst` command is installed (usually this is in `gettext` package)
-4. `docker -d` daemon is running somewhere that `docker` CLI can connect to (If on Mac, you might try [`boot2docker`][2])
+4. `docker -d` daemon is running somewhere that `docker` CLI can connect to (If on Mac, you might try [`boot2docker`][2] + [`docker-machine`][4])
 5. `openssl` is installed (for generating self-signed SSL certs)
 
 ## Running:
@@ -44,3 +44,4 @@ To completely stop, and remove all containers, volumes, and data (including Infl
 [1]: https://docs.docker.com/compose/
 [2]: http://boot2docker.io
 [3]: https://github.com/grafana/grafana/blob/master/docs/sources/installation/configuration.md#using-environment-variables
+[4]: https://docs.docker.com/machine/install-machine/
